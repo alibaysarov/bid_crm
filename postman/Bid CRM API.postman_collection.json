@@ -1,0 +1,800 @@
+{
+    "info": {
+        "name": "Bid CRM API",
+        "description": "Generated from openapi/openapi.yaml. Run the CSRF-cookie request once, then log in once; Postman reuses the session cookie for protected requests.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Webhooks",
+            "item": [
+                {
+                    "name": "Receive a deal update from an external CRM",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Webhook-Token",
+                                "value": "{{webhook_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/webhooks/deals",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "webhooks",
+                                "deals"
+                            ],
+                            "query": []
+                        },
+                        "description": "Receive a deal update from an external CRM",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"event_id\": \"evt_123\",\n    \"event_time\": \"2026-10-15T15:30:00Z\",\n    \"deal\": {\n        \"id\": \"5678\",\n        \"version\": 18,\n        \"updated_at\": \"2026-10-15T15:29:50Z\",\n        \"title\": \"Продажа курса\",\n        \"status\": \"NEW\",\n        \"amount\": 49000\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Initialize the session and receive the CSRF cookie",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/auth/csrf-cookie",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "csrf-cookie"
+                            ],
+                            "query": []
+                        },
+                        "description": "Initialize the session and receive the CSRF cookie"
+                    }
+                },
+                {
+                    "name": "Register a user and create a session",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/auth/register",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "register"
+                            ],
+                            "query": []
+                        },
+                        "description": "Register a user and create a session",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\",\n    \"password_confirmation\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                                    "    const responseBody = pm.response.json();",
+                                    "    if (responseBody.data && responseBody.data.id) {",
+                                    "        pm.collectionVariables.set(\"user_id\", String(responseBody.data.id));",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Authenticate with email and password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/auth/login",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "login"
+                            ],
+                            "query": []
+                        },
+                        "description": "Authenticate with email and password",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                                    "    const responseBody = pm.response.json();",
+                                    "    if (responseBody.data && responseBody.data.id) {",
+                                    "        pm.collectionVariables.set(\"user_id\", String(responseBody.data.id));",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Invalidate the current session",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/auth/logout",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "logout"
+                            ],
+                            "query": []
+                        },
+                        "description": "Invalidate the current session"
+                    }
+                },
+                {
+                    "name": "Return the current user's profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/auth/user",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "user"
+                            ],
+                            "query": []
+                        },
+                        "description": "Return the current user's profile"
+                    }
+                },
+                {
+                    "name": "Send a reset link when the email is registered",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/auth/forgot-password",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "forgot-password"
+                            ],
+                            "query": []
+                        },
+                        "description": "Send a reset link when the email is registered",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{email}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Set a new password using an emailed token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/auth/reset-password",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "reset-password"
+                            ],
+                            "query": []
+                        },
+                        "description": "Set a new password using an emailed token",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{email}}\",\n    \"token\": \"{{reset_token}}\",\n    \"password\": \"{{password}}\",\n    \"password_confirmation\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Users",
+            "item": [
+                {
+                    "name": "Return the authenticated user's own profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/users",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users"
+                            ],
+                            "query": []
+                        },
+                        "description": "Return the authenticated user's own profile"
+                    }
+                },
+                {
+                    "name": "View the authenticated user's own profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/users/{{user_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{user_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "View the authenticated user's own profile"
+                    }
+                },
+                {
+                    "name": "Update the authenticated user's own profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/users/{{user_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{user_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "Update the authenticated user's own profile",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"email\": \"{{email}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Update the authenticated user's own profile",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/users/{{user_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{user_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "Update the authenticated user's own profile",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"email\": \"{{email}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete the authenticated user's own profile",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/users/{{user_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{user_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "Delete the authenticated user's own profile"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Deals",
+            "item": [
+                {
+                    "name": "List deals with filtering, sorting, and pagination",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/deals?status=NEW&search=string&sort=created_at&direction=asc&page=1&per_page=1",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "deals"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "NEW",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "string",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "sort",
+                                    "value": "created_at",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "direction",
+                                    "value": "asc",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "1",
+                                    "disabled": false
+                                }
+                            ]
+                        },
+                        "description": "List deals with filtering, sorting, and pagination"
+                    }
+                },
+                {
+                    "name": "Create a deal manually",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/deals",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "deals"
+                            ],
+                            "query": []
+                        },
+                        "description": "Create a deal manually",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"external_id\": \"string\",\n    \"title\": \"string\",\n    \"status\": \"NEW\",\n    \"amount\": 0,\n    \"assigned_to_user_id\": \"{{user_id}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Show a deal",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/deals/{{deal_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "deals",
+                                "{{deal_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "Show a deal"
+                    }
+                },
+                {
+                    "name": "Update manual deal fields",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/deals/{{deal_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "deals",
+                                "{{deal_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "Update manual deal fields",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"external_id\": \"string\",\n    \"title\": \"string\",\n    \"status\": \"NEW\",\n    \"amount\": 0,\n    \"assigned_to_user_id\": \"{{user_id}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Update manual deal fields",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/deals/{{deal_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "deals",
+                                "{{deal_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "Update manual deal fields",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"external_id\": \"string\",\n    \"title\": \"string\",\n    \"status\": \"NEW\",\n    \"amount\": 0,\n    \"assigned_to_user_id\": \"{{user_id}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete a deal",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/deals/{{deal_id}}",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "deals",
+                                "{{deal_id}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "Delete a deal"
+                    }
+                },
+                {
+                    "name": "Queue a deal refresh from the external CRM",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://{{base_url}}/api/deals/{{deal_id}}/refresh",
+                            "protocol": "http",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "deals",
+                                "{{deal_id}}",
+                                "refresh"
+                            ],
+                            "query": []
+                        },
+                        "description": "Queue a deal refresh from the external CRM"
+                    }
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "noauth"
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "const xsrfCookie = pm.cookies.get(\"XSRF-TOKEN\");",
+                    "if (xsrfCookie) {",
+                    "    pm.request.headers.upsert({ key: \"X-XSRF-TOKEN\", value: decodeURIComponent(xsrfCookie) });",
+                    "} else if ([\"POST\", \"PUT\", \"PATCH\", \"DELETE\"].includes(pm.request.method)) {",
+                    "    console.warn(\"No XSRF-TOKEN cookie found. Send the CSRF-cookie request before this request.\");",
+                    "}"
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "localhost:8000",
+            "type": "string"
+        },
+        {
+            "key": "email",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "password",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "reset_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "webhook_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "user_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "deal_id",
+            "value": "1",
+            "type": "string"
+        }
+    ]
+}

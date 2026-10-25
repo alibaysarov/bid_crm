@@ -1,0 +1,999 @@
+openapi: 3.1.0
+info:
+    title: Bid CRM API
+    version: 1.0.0
+    description: >
+        JSON API for cookie/session authentication, user profiles, sales deals, and webhook event monitoring.
+servers:
+    - url: /api
+security: []
+components:
+    securitySchemes:
+        sessionCookie:
+            type: apiKey
+            in: cookie
+            name: laravel-session
+            description: Laravel session cookie; the configured cookie name may differ.
+        csrfToken:
+            type: apiKey
+            in: header
+            name: X-XSRF-TOKEN
+            description: Value read from the XSRF-TOKEN cookie issued by the CSRF initialization endpoint.
+    schemas:
+        User:
+            type: object
+            required: [id, first_name, last_name, email, created_at]
+            properties:
+                id:
+                    type: integer
+                first_name:
+                    type: string
+                last_name:
+                    type: string
+                email:
+                    type: string
+                    format: email
+                created_at:
+                    type: [string, 'null']
+                    format: date-time
+        Deal:
+            type: object
+            required:
+                - id
+                - external_id
+                - title
+                - status
+                - amount
+                - external_updated_at
+                - external_version
+                - external_refresh_status
+                - external_refresh_error
+                - external_refresh_updated_at
+                - created_by_user_id
+                - assigned_to_user_id
+                - created_at
+                - updated_at
+            properties:
+                id:
+                    type: integer
+                external_id:
+                    type: [string, 'null']
+                title:
+                    type: string
+                status:
+                    type: string
+                    enum: [NEW, IN_PROGRESS, WON, LOST]
+                amount:
+                    type: string
+                external_updated_at:
+                    type: [string, 'null']
+                    format: date-time
+                external_version:
+                    type: [integer, 'null']
+                external_refresh_status:
+                    type: [string, 'null']
+                    enum: [queued, processing, succeeded, failed, null]
+                external_refresh_error:
+                    type: [string, 'null']
+                external_refresh_updated_at:
+                    type: [string, 'null']
+                    format: date-time
+                created_by_user_id:
+                    type: [integer, 'null']
+                assigned_to_user_id:
+                    type: [integer, 'null']
+                created_at:
+                    type: string
+                    format: date-time
+                updated_at:
+                    type: string
+                    format: date-time
+        EventDeal:
+            type: [object, 'null']
+            required: [id, version, updated_at, title, status, amount]
+            properties:
+                id:
+                    type: [string, 'null']
+                version:
+                    type: [integer, 'null']
+                updated_at:
+                    type: [string, 'null']
+                title:
+                    type: [string, 'null']
+                status:
+                    type: [string, 'null']
+                amount:
+                    type: [string, 'null']
+        Event:
+            type: object
+            required:
+                [id, event_id, event_type, event_time, status, deal, error]
+            properties:
+                id:
+                    type: integer
+                event_id:
+                    type: [string, 'null']
+                event_type:
+                    type: [string, 'null']
+                event_time:
+                    type: [string, 'null']
+                    format: date-time
+                status:
+                    type: [string, 'null']
+                    enum: [CREATED, PROCESSING, SUCCESS, SKIPPED, FAILED, null]
+                deal:
+                    $ref: '#/components/schemas/EventDeal'
+                error:
+                    type: [string, 'null']
+        ValidationError:
+            type: object
+            properties:
+                message:
+                    type: string
+                errors:
+                    type: object
+                    additionalProperties:
+                        type: array
+                        items:
+                            type: string
+        UserEnvelope:
+            type: object
+            required: [data]
+            properties:
+                data:
+                    $ref: '#/components/schemas/User'
+        DealEnvelope:
+            type: object
+            required: [data]
+            properties:
+                data:
+                    $ref: '#/components/schemas/Deal'
+        DealList:
+            type: object
+            required: [data, links, meta]
+            properties:
+                data:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Deal'
+                links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        EventList:
+            type: object
+            required: [data, links, meta]
+            properties:
+                data:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Event'
+                links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        PaginationLinks:
+            type: object
+            required: [first, last, prev, next]
+            properties:
+                first:
+                    type: [string, 'null']
+                    format: uri-reference
+                last:
+                    type: [string, 'null']
+                    format: uri-reference
+                prev:
+                    type: [string, 'null']
+                    format: uri-reference
+                next:
+                    type: [string, 'null']
+                    format: uri-reference
+        PaginationMeta:
+            type: object
+            required:
+                [
+                    current_page,
+                    from,
+                    last_page,
+                    links,
+                    path,
+                    per_page,
+                    to,
+                    total,
+                ]
+            properties:
+                current_page:
+                    type: integer
+                    minimum: 1
+                from:
+                    type: [integer, 'null']
+                last_page:
+                    type: integer
+                    minimum: 1
+                links:
+                    type: array
+                    items:
+                        type: object
+                        required: [url, label, active]
+                        properties:
+                            url:
+                                type: [string, 'null']
+                                format: uri-reference
+                            label:
+                                type: string
+                            active:
+                                type: boolean
+                path:
+                    type: string
+                    format: uri-reference
+                per_page:
+                    type: integer
+                    minimum: 1
+                to:
+                    type: [integer, 'null']
+                total:
+                    type: integer
+                    minimum: 0
+        Message:
+            type: object
+            required: [message]
+            properties:
+                message:
+                    type: string
+        WebhookDealPayload:
+            type: object
+            required: [event_id, event_time, deal]
+            properties:
+                event_id:
+                    type: string
+                    maxLength: 255
+                    example: evt_123
+                event_time:
+                    type: string
+                    format: date-time
+                    example: '2026-10-15T15:30:00Z'
+                deal:
+                    type: object
+                    required: [id, version, updated_at, title, status, amount]
+                    properties:
+                        id:
+                            type: string
+                            maxLength: 255
+                            example: '5678'
+                        version:
+                            type: integer
+                            minimum: 1
+                            example: 18
+                        updated_at:
+                            type: string
+                            format: date-time
+                            example: '2026-10-15T15:29:50Z'
+                        title:
+                            type: string
+                            maxLength: 255
+                            example: Продажа курса
+                        status:
+                            type: string
+                            enum: [NEW, IN_PROGRESS, WON, LOST]
+                            example: NEW
+                        amount:
+                            type: number
+                            minimum: 0
+                            maximum: 999999999999.99
+                            example: 49000
+        WebhookDeal:
+            type: object
+            required: [id, version, updated_at, title, status, amount]
+            properties:
+                id:
+                    type: string
+                version:
+                    type: integer
+                updated_at:
+                    type: string
+                    format: date-time
+                title:
+                    type: string
+                status:
+                    type: string
+                    enum: [NEW, IN_PROGRESS, WON, LOST]
+                amount:
+                    type: string
+                    example: '49000.00'
+        WebhookDealResponse:
+            type: object
+            required: [data, meta]
+            properties:
+                data:
+                    $ref: '#/components/schemas/WebhookDeal'
+                meta:
+                    type: object
+                    required: [event_id, processing_status]
+                    properties:
+                        event_id:
+                            type: string
+                        processing_status:
+                            type: string
+                            enum: [received, processing, applied, skipped, failed]
+                        error:
+                            type: string
+        WebhookError:
+            type: object
+            required: [message]
+            properties:
+                message:
+                    type: string
+                errors:
+                    type: object
+                    additionalProperties:
+                        type: array
+                        items:
+                            type: string
+paths:
+    /events:
+        get:
+            operationId: listEvents
+            summary: List webhook events with filtering and pagination
+            security:
+                - sessionCookie: []
+            parameters:
+                - name: event_type
+                  in: query
+                  schema:
+                      type: string
+                      maxLength: 64
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [CREATED, PROCESSING, SUCCESS, SKIPPED, FAILED]
+                - name: search
+                  in: query
+                  description: Partial match against event ID, deal ID, or deal title.
+                  schema:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                - name: page
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                - name: per_page
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+            responses:
+                '200':
+                    description: Paginated event collection.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/EventList'
+                '401':
+                    description: Authentication required.
+                '422':
+                    description: Invalid filters.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+    /webhooks/deals:
+        post:
+            operationId: receiveDealWebhook
+            summary: Receive a deal update from an external CRM
+            parameters:
+                - name: X-Webhook-Token
+                  in: header
+                  required: true
+                  description: Shared webhook secret configured by the server.
+                  schema:
+                      type: string
+                      example: '{{webhook_token}}'
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/WebhookDealPayload'
+            responses:
+                '201':
+                    description: Event was reliably accepted for processing; the processing status is included in meta.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WebhookDealResponse'
+                '200':
+                    description: Duplicate event already received; existing deal snapshot returned.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WebhookDealResponse'
+                '401':
+                    description: Missing or invalid webhook token.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WebhookError'
+                '422':
+                    description: Invalid webhook payload.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+                '503':
+                    description: Webhook token is not configured on the server.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WebhookError'
+    /auth/csrf-cookie:
+        get:
+            operationId: initializeSession
+            summary: Initialize the session and receive the CSRF cookie
+            responses:
+                '204':
+                    description: CSRF cookie set when the response is processed by the browser.
+    /auth/register:
+        post:
+            operationId: register
+            summary: Register a user and create a session
+            security:
+                - csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                [
+                                    first_name,
+                                    last_name,
+                                    email,
+                                    password,
+                                    password_confirmation,
+                                ]
+                            properties:
+                                first_name:
+                                    type: string
+                                    maxLength: 255
+                                last_name:
+                                    type: string
+                                    maxLength: 255
+                                email:
+                                    type: string
+                                    format: email
+                                password:
+                                    type: string
+                                    format: password
+                                password_confirmation:
+                                    type: string
+                                    format: password
+            responses:
+                '201':
+                    description: User registered and authenticated.
+                    headers:
+                        Set-Cookie:
+                            schema:
+                                type: string
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserEnvelope'
+                '422':
+                    description: Invalid registration data.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+    /auth/login:
+        post:
+            operationId: login
+            summary: Authenticate with email and password
+            security:
+                - csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, password]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+                                password:
+                                    type: string
+                                    format: password
+            responses:
+                '200':
+                    description: Authenticated; session cookie is set.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserEnvelope'
+                '422':
+                    description: Invalid credentials or request data.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+    /auth/logout:
+        post:
+            operationId: logout
+            summary: Invalidate the current session
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            responses:
+                '204':
+                    description: Session ended.
+                '401':
+                    description: Authentication required.
+    /auth/user:
+        get:
+            operationId: getAuthenticatedUser
+            summary: Return the current user's profile
+            security:
+                - sessionCookie: []
+            responses:
+                '200':
+                    description: Current user.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserEnvelope'
+                '401':
+                    description: Authentication required.
+    /auth/forgot-password:
+        post:
+            operationId: requestPasswordReset
+            summary: Send a reset link when the email is registered
+            security:
+                - csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+            responses:
+                '202':
+                    description: Generic response that does not reveal account existence.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Message'
+                '422':
+                    description: Invalid email.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+    /auth/reset-password:
+        post:
+            operationId: resetPassword
+            summary: Set a new password using an emailed token
+            security:
+                - csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                [email, token, password, password_confirmation]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+                                token:
+                                    type: string
+                                password:
+                                    type: string
+                                    format: password
+                                password_confirmation:
+                                    type: string
+                                    format: password
+            responses:
+                '200':
+                    description: Password changed.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Message'
+                '422':
+                    description: Invalid or expired reset token.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+    /users:
+        get:
+            operationId: listUsers
+            summary: Return the authenticated user's own profile
+            security:
+                - sessionCookie: []
+            responses:
+                '200':
+                    description: A one-item array containing the current user's profile.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required: [data]
+                                properties:
+                                    data:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/User'
+                '401':
+                    description: Authentication required.
+    /users/{user}:
+        parameters:
+            - name: user
+              in: path
+              required: true
+              schema:
+                  type: integer
+        get:
+            operationId: getUser
+            summary: View the authenticated user's own profile
+            security:
+                - sessionCookie: []
+            responses:
+                '200':
+                    description: User profile.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserEnvelope'
+                '401':
+                    description: Authentication required.
+                '403':
+                    description: The profile belongs to another user.
+        patch:
+            operationId: updateUser
+            summary: Update the authenticated user's own profile
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                first_name:
+                                    type: string
+                                    maxLength: 255
+                                last_name:
+                                    type: string
+                                    maxLength: 255
+                                email:
+                                    type: string
+                                    format: email
+            responses:
+                '200':
+                    description: Updated profile.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserEnvelope'
+                '401':
+                    description: Authentication required.
+                '403':
+                    description: The profile belongs to another user.
+                '422':
+                    description: Invalid profile data.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+        put:
+            operationId: replaceUserProfile
+            summary: Update the authenticated user's own profile
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                first_name:
+                                    type: string
+                                    maxLength: 255
+                                last_name:
+                                    type: string
+                                    maxLength: 255
+                                email:
+                                    type: string
+                                    format: email
+            responses:
+                '200':
+                    description: Updated profile.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserEnvelope'
+                '401':
+                    description: Authentication required.
+                '403':
+                    description: The profile belongs to another user.
+                '422':
+                    description: Invalid profile data.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+        delete:
+            operationId: deleteUser
+            summary: Delete the authenticated user's own profile
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            responses:
+                '204':
+                    description: Profile deleted and session invalidated.
+                '401':
+                    description: Authentication required.
+                '403':
+                    description: The profile belongs to another user.
+    /deals:
+        get:
+            operationId: listDeals
+            summary: List deals with filtering, sorting, and pagination
+            security:
+                - sessionCookie: []
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [NEW, IN_PROGRESS, WON, LOST]
+                - name: search
+                  in: query
+                  description: >
+                      Trimmed, case-insensitive partial match against the deal title or
+                      external ID. Search terms must contain between 1 and 100 characters.
+                  schema:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                - name: sort
+                  in: query
+                  schema:
+                      type: string
+                      enum: [created_at, updated_at, title, status, amount]
+                - name: direction
+                  in: query
+                  schema:
+                      type: string
+                      enum: [asc, desc]
+                - name: page
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                - name: per_page
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+            responses:
+                '200':
+                    description: Paginated deal collection.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DealList'
+                '401':
+                    description: Authentication required.
+        post:
+            operationId: createDeal
+            summary: Create a deal manually
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [title, status, amount]
+                            properties:
+                                external_id:
+                                    type: [string, 'null']
+                                    maxLength: 255
+                                title:
+                                    type: string
+                                    maxLength: 255
+                                status:
+                                    type: string
+                                    enum: [NEW, IN_PROGRESS, WON, LOST]
+                                amount:
+                                    type: number
+                                    minimum: 0
+                                assigned_to_user_id:
+                                    type: [integer, 'null']
+            responses:
+                '201':
+                    description: Deal created.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DealEnvelope'
+                '401':
+                    description: Authentication required.
+                '422':
+                    description: Invalid deal data.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+    /deals/{deal}:
+        parameters:
+            - name: deal
+              in: path
+              required: true
+              schema:
+                  type: integer
+        get:
+            operationId: getDeal
+            summary: Show a deal
+            security:
+                - sessionCookie: []
+            responses:
+                '200':
+                    description: Deal.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DealEnvelope'
+                '401':
+                    description: Authentication required.
+                '404':
+                    description: Deal not found.
+        patch:
+            operationId: updateDeal
+            summary: Update manual deal fields
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                external_id:
+                                    type: [string, 'null']
+                                    maxLength: 255
+                                title:
+                                    type: string
+                                    maxLength: 255
+                                status:
+                                    type: string
+                                    enum: [NEW, IN_PROGRESS, WON, LOST]
+                                amount:
+                                    type: number
+                                    minimum: 0
+                                assigned_to_user_id:
+                                    type: [integer, 'null']
+            responses:
+                '200':
+                    description: Updated deal.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DealEnvelope'
+                '401':
+                    description: Authentication required.
+                '404':
+                    description: Deal not found.
+                '422':
+                    description: Invalid deal data.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'
+        put:
+            operationId: replaceDeal
+            summary: Update manual deal fields
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                external_id:
+                                    type: [string, 'null']
+                                    maxLength: 255
+                                title:
+                                    type: string
+                                    maxLength: 255
+                                status:
+                                    type: string
+                                    enum: [NEW, IN_PROGRESS, WON, LOST]
+                                amount:
+                                    type: number
+                                    minimum: 0
+                                assigned_to_user_id:
+                                    type: [integer, 'null']
+            responses:
+                '200':
+                    description: Updated deal.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DealEnvelope'
+                '401':
+                    description: Authentication required.
+                '404':
+                    description: Deal not found.
+        delete:
+            operationId: deleteDeal
+            summary: Delete a deal
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            responses:
+                '204':
+                    description: Deal deleted.
+                '401':
+                    description: Authentication required.
+                '404':
+                    description: Deal not found.
+    /deals/{deal}/refresh:
+        parameters:
+            - name: deal
+              in: path
+              required: true
+              schema:
+                  type: integer
+        post:
+            operationId: refreshDealFromCrm
+            summary: Queue a deal refresh from the external CRM
+            security:
+                - sessionCookie: []
+                  csrfToken: []
+            responses:
+                '202':
+                    description: Deal refresh queued.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Message'
+                '401':
+                    description: Authentication required.
+                '403':
+                    description: The user cannot update this deal.
+                '404':
+                    description: Deal not found.
+                '422':
+                    description: The deal is not linked to an external CRM.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ValidationError'

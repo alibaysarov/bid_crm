@@ -1,0 +1,67 @@
+FROM php:8.4-fpm-bookworm AS php-base
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 libxml2 libonig5 $PHPIZE_DEPS libpq-dev libxml2-dev libonig-dev \
+    && docker-php-ext-install -j"$(nproc)" mbstring pcntl pdo_pgsql sockets xml \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get purge -y --auto-remove $PHPIZE_DEPS libpq-dev libxml2-dev libonig-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
+
+FROM php-base AS app-build
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:22-bookworm-slim /usr/local/bin/npm /usr/local/bin/npm
+COPY --from=node:22-bookworm-slim /usr/local/bin/npx /usr/local/bin/npx
+COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends unzip \
+    && ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . .
+
+ARG VITE_APP_NAME="Deals CRM"
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT=443
+ARG VITE_REVERB_SCHEME=https
+
+ENV VITE_APP_NAME=${VITE_APP_NAME} \
+    VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY} \
+    VITE_REVERB_HOST=${VITE_REVERB_HOST} \
+    VITE_REVERB_PORT=${VITE_REVERB_PORT} \
+    VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
+
+RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader \
+    && npm ci \
+    && npm run build \
+    && rm -rf node_modules \
+    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chown -R 82:82 storage bootstrap/cache
+
+FROM php-base AS php-app
+
+COPY --from=app-build --chown=82:82 /var/www/html /var/www/html
+
+USER 82:82
+
+CMD ["php-fpm", "-F"]
+
+FROM nginx:alpine AS nginx
+
+COPY --from=app-build /var/www/html/public /usr/share/nginx/html/public
+COPY docker/nginx/production.conf /etc/nginx/nginx.conf
+
+RUN rm -rf /docker-entrypoint.d
+
+USER 101:101
+
+EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off;"]
