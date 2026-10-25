@@ -1,7 +1,7 @@
 # Deals API
 
 Приложение предоставляет REST API для управления сделками и аутентификации через cookie и сессии. Используются PHP 8.4, Laravel 13.38, React 19, TypeScript 5.7, PostgreSQL 17 и Redis 7.
-Ответ на бинес задачи лежит в Business.md
+Ответ на бинес задачи лежит в [Business.md](Business.md)
 ## Запуск проекта локально
 
 Понадобятся Docker с Docker Compose v2. PHP и Composer запускаются в PHP-контейнере, frontend-команды — в отдельном контейнере Node.js 22 на той же Debian/glibc-базе, что и production-сборка.
